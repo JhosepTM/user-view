@@ -1,7 +1,5 @@
 <template>
-  <v-main>
-    <router-view />
-  </v-main>
+  <h1>About</h1>
 </template>
 
 <script lang="ts" setup>

@@ -1,21 +1,35 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
-
+import UserCreateView from "@/views/users/UserCreateView.vue";
+import UserView from "@/views/users/UserView.vue";
+import About from "@/views/About.vue";
 const routes = [
   {
     path: '/',
-    component: () => import('@/layouts/default/Default.vue'),
+    component: () => import('@/views/Home.vue'),
     children: [
       {
         path: '',
         name: 'Home',
-        // route level code-splitting
-        // this generates a separate chunk (Home-[hash].js) for this route
-        // which is lazy-loaded when the route is visited.
         component: () => import('@/views/Home.vue'),
       },
     ],
   },
+  {
+    path: '/about',
+    name: 'about',
+    component: About
+  },
+  {
+    path: '/users',
+    name: 'users',
+    component: UserView
+  },
+  {
+    path: '/users/create',
+    name: 'usersCreate',
+    component: UserCreateView
+  }
 ]
 
 const router = createRouter({
