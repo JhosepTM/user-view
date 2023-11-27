@@ -1,7 +1,10 @@
 <template>
-  <v-data-table
+  <v-data-table-server
     :headers="headers"
     :items="users"
+    
+    :loading="isLoading"
+    loading-text="Loading... Please wait"
   >
     <template v-slot:top>
       <v-toolbar
@@ -25,7 +28,7 @@
         >Add User</v-btn>
         <v-dialog v-model="dialogDelete" max-width="500px">
           <v-card>
-            <v-card-title class="text-h5">Are you sure you want to delete this item?</v-card-title>
+            <v-card-title class="text-h5">Are you sure you want to delete this User?</v-card-title>
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn color="blue-darken-1" variant="text" @click="closeDelete">Cancel</v-btn>
@@ -38,7 +41,7 @@
     </template>
     <template v-slot:item.actions="{ item }">
 
-      <v-btn text to="/users" prepend-icon="mdi-pencil" color="warning">
+      <v-btn text :to="`/users/edit/${item.id}`" prepend-icon="mdi-pencil" color="warning">
         <template v-slot:prepend>
           <v-icon color="white"></v-icon>
         </template>
@@ -59,15 +62,19 @@
         Reset
       </v-btn>
     </template>
-  </v-data-table>
+  </v-data-table-server>
 </template>
 
 <script>
+  import axios from 'axios';
   export default {
     data: () => ({
+      isLoading: true,
       dialog: false,
       dialogDelete: false,
       headers: [
+        { title: 'First Name', sortable: false, key: 'firstName' },
+        { title: 'Last Name', sortable: false, key: 'lastName' },
         {
           title: 'User Name',
           align: 'start',
@@ -76,8 +83,6 @@
         },
         { title: 'Password', sortable: false, key: 'password' },
         { title: 'Email', sortable: false, key: 'email' },
-        { title: 'First Name', sortable: false, key: 'firstName' },
-        { title: 'Last Name', sortable: false, key: 'lastName' },
         { title: 'Age', key: 'age' },
         { title: 'Birth Day', key: 'birthDay' },
         { title: 'Actions', key: 'actions', sortable: false },
@@ -120,58 +125,42 @@
     },
 
     created () {
-      this.initialize()
+      
+      this.initialize();
+      this.isLoading = false;
     },
 
     methods: {
       initialize () {
-        this.users = [
-          {
-            userName: 'Frozen Yogurt',
-            password: 159,
-            email: 6.0,
-            firstName: 24,
-            lastName: 4.0,
-            age: 0,
-            birthDay: 0,
-          },
-          {
-            userName: 'Ice cream sandwich',
-            password: 237,
-            email: 9.0,
-            firstName: 37,
-            lastName: 4.3,
-            age: 0,
-            birthDay: 0,
-          },
-          {
-            userName: 'Eclair',
-            password: 262,
-            email: 16.0,
-            firstName: 23,
-            lastName: 6.0,
-            age: 0,
-            birthDay: 0,
-          },
-          {
-            userName: 'Cupcake',
-            password: 305,
-            email: 3.7,
-            firstName: 67,
-            lastName: 4.3,
-            age: 0,
-            birthDay: 0,
-          },
-          {
-            userName: 'Gingerbread',
-            password: 356,
-            email: 16.0,
-            firstName: 49,
-            lastName: 3.9,
-            age: 0,
-            birthDay: 0,
-          },
-        ]
+        axios.get('http://localhost:8080/v1/users?detailed=true')
+        .then( response => {
+          const lista = [];
+          response.data.forEach(userDB => {
+            let birthDay = "0 / 0 / 0000";
+            if (userDB.userDetail) {
+              const date = new Date(userDB.userDetail.birthDay);
+              const month = date.getMonth() + 1;
+              let monthString = month.toString().padStart(2, '0'); 
+              birthDay = `${date.getFullYear()}-${monthString}-${date.getDate().toString().padStart(2, '0')}`;
+            }
+            const user = 
+              {
+                "id": userDB.id,
+                "userName": userDB.userName,
+                "password": userDB.password,
+                "email": userDB.email,
+                "firstName": userDB.userDetail?userDB.userDetail.firstName:"",
+                "lastName": userDB.userDetail?userDB.userDetail.lastName:"",
+                "age": userDB.userDetail?userDB.userDetail.age:"",
+                "birthDay": birthDay,
+              }
+            lista.push(user);
+          });
+          this.users = lista;
+        })
+        .catch(function (error) {
+          console.error(error);
+        });
       },
 
       editItem (item) {
@@ -186,9 +175,14 @@
         this.dialogDelete = true
       },
 
-      deleteItemConfirm () {
-        this.users.splice(this.editedIndex, 1)
+      async deleteItemConfirm () {
+        const deltedItem = await axios.delete(`http://localhost:8080/v1/users/${this.editedItem.id}`);
+        if (deltedItem.status == 204) {
+          this.users.splice(this.editedIndex, 1)
         this.closeDelete()
+        } else {
+          alert("Can't delete the user, try again later")
+        }
       },
 
       close () {

@@ -92,7 +92,10 @@
   import { reactive } from 'vue'
   import { useVuelidate } from '@vuelidate/core'
   import { email, required } from '@vuelidate/validators'
+  import { useRouter } from 'vue-router'
+  import axios from 'axios'
 
+  const router = useRouter()
   const initialState = {
     firstName: '',
     lastName: '',
@@ -118,19 +121,19 @@
   const v$ = useVuelidate(rules, state)
 
   function calculateAge(fechaNacimiento: string) {
-  var hoy = new Date();
-  var cumpleanos = new Date(fechaNacimiento);
-  var edad = hoy.getFullYear() - cumpleanos.getFullYear();
-  var m = hoy.getMonth() - cumpleanos.getMonth();
+    var hoy = new Date();
+    var cumpleanos = new Date(fechaNacimiento);
+    var edad = hoy.getFullYear() - cumpleanos.getFullYear();
+    var m = hoy.getMonth() - cumpleanos.getMonth();
 
-  if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) {
-    edad--;
+    if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) {
+      edad--;
+    }
+
+    return edad;
   }
 
-  return edad;
-}
-
-  function submit(){
+  async function submit(){
     v$.value.$validate();
     if (v$.value.$invalid) {
       return;
@@ -147,5 +150,9 @@
           "birthDay": v$.value.birthDay.$model
         }
       }
+    const response = await axios.post('http://localhost:8080/v1/users', user)
+    if (response != null) {
+      router.push('/users')
+    }
   }
 </script>
